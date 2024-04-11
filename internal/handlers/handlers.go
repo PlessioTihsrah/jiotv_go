@@ -360,6 +360,7 @@ func RenderTSHandler(c *fiber.Ctx) error {
 func ChannelsHandler(c *fiber.Ctx) error {
 	quality := strings.TrimSpace(c.Query("q"))
 	isSplitCategory := strings.TrimSpace(c.Query("c")) == "split"
+	languages := strings.ToLower(strings.TrimSpace(c.Query("lang")))
 	apiResponse := television.Channels()
 	// hostUrl should be request URL like http://localhost:5001
 	hostURL := strings.ToLower(c.Protocol()) + "://" + c.Hostname()
@@ -370,6 +371,10 @@ func ChannelsHandler(c *fiber.Ctx) error {
 		m3uContent := "#EXTM3U x-tvg-url=\"" + hostURL + "/epg.xml.gz\"\n"
 		logoURL := hostURL + "/jtvimage"
 		for _, channel := range apiResponse.Result {
+			cL := television.LanguageMap[channel.Language]
+			if languages != "" && !strings.Contains(languages, strings.ToLower(cL)) {
+				continue
+			}
 			var channelURL string
 			if quality != "" {
 				channelURL = fmt.Sprintf("%s/live/%s/%s.m3u8", hostURL, quality, channel.ID)
@@ -457,8 +462,9 @@ func FaviconHandler(c *fiber.Ctx) error {
 // For user convenience, redirect to /channels?type=m3u
 func PlaylistHandler(c *fiber.Ctx) error {
 	quality := c.Query("q")
+	languages := "Hindi,English" //c.Query("lang")
 	isSplitCategory := c.Query("c")
-	return c.Redirect("/channels?type=m3u&q="+quality+"&c="+isSplitCategory, fiber.StatusMovedPermanently)
+	return c.Redirect("/channels?type=m3u&q="+quality+"&lang="+languages+"&c="+isSplitCategory, fiber.StatusMovedPermanently)
 }
 
 // ImageHandler loads image from JioTV server
